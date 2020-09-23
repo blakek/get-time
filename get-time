@@ -1,0 +1,108 @@
+#!/usr/bin/env node
+
+const { promises: fs, constants: fsConstants } = require("fs");
+const path = require("path");
+const dateFns = require("date-fns");
+
+const configDirectory = "/Users/bknight/Desktop/scratchpad/times-txt";
+
+function abort(message) {
+	console.error(message);
+	process.exit(1);
+}
+
+function dateToDocumentName(date) {
+	const today = dateFns.format(date, "yyyy-MM-dd");
+	return `${today}.md`;
+}
+
+function getHours(doc) {
+	const entryCount = doc
+		.match(/ (?<entries>[-x]{4}) /gi)
+		.join("")
+		.replace(/[ -]/g, "").length;
+
+	return entryCount / 4;
+}
+
+async function copyTemplate() {
+	const src = path.resolve(configDirectory, "_template.md");
+	const dest = path.resolve(configDirectory, dateToDocumentName(Date.now()));
+
+	try {
+		await fs.copyFile(src, dest, fsConstants.COPYFILE_EXCL);
+	} catch (error) {
+		abort(error.message);
+	}
+}
+
+function getBreakdown(doc) {
+	const timeEntries = doc
+		.split("\n")
+		.slice(2)
+		.filter((line) => line[0] === "|")
+		.slice(0, -1)
+		.map((line) => line.split("|").filter(Boolean))
+		.map(([title, ...times]) => [
+			title.replace(/\\*/g, "").trim(),
+			getHours(times.join()),
+		]);
+
+	const longestTitle = timeEntries.reduce(
+		(longest, [title]) => Math.max(longest, title.length),
+		0
+	);
+
+	const formatTitle = (str) => str.padEnd(longestTitle + 2, ".");
+	const formatTime = (num) => num.toFixed(2);
+	const formatEntry = ([title, time]) =>
+		`- ${formatTitle(title)}${formatTime(time)}\n`;
+
+	return timeEntries.reduce(
+		(output, timeEntry) => output.concat(formatEntry(timeEntry)),
+		"\n"
+	);
+}
+
+async function main() {
+	const args = process.argv.slice(2);
+	let filename;
+
+	const day = args[0] ?? "today";
+	const offset = Number(day);
+
+	if (day === "today") {
+		filename = dateToDocumentName(Date.now());
+	} else if (isFinite(offset)) {
+		filename = dateToDocumentName(dateFns.addDays(Date.now(), offset));
+	} else if (new RegExp(day).test("yesterday")) {
+		filename = dateToDocumentName(dateFns.subDays(Date.now(), 1));
+	} else if (/\.md$/.test(day)) {
+		filename = day;
+	} else if (day === "new") {
+		return copyTemplate();
+	} else {
+		filename = dateToDocumentName(dateFns.parseISO(day));
+	}
+
+	const filePath = path.resolve(configDirectory, filename);
+	const contents = await fs.readFile(filePath, { encoding: "utf8" });
+	const hours = getHours(contents);
+
+	console.log(`Current:     ${hours} hr`);
+
+	if (hours < 8) {
+		const remainingHours = 8 - hours;
+		const endTimestamp = dateFns.addMinutes(
+			Date.now(),
+			remainingHours * 60 // HACK: dateFns.addHours seems to only apply whole hours, not minutes
+		);
+		const endTime = new Date(endTimestamp).toLocaleTimeString();
+
+		console.log(`Remaining:   ${remainingHours} hr - ${endTime}`);
+	}
+
+	console.log(getBreakdown(contents));
+}
+
+main();
