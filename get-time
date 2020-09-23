@@ -46,7 +46,9 @@ function getBreakdown(doc) {
     .map(([title, ...times]) => [
       title.replace(/\\*/g, "").trim(),
       getHours(times.join()),
-    ]);
+    ])
+    // Move "spread" time to bottom
+    .sort((a, b) => (a[0] === "spread" ? 1 : b[0] === "spread" ? -1 : 0));
 
   const longestTitle = timeEntries.reduce(
     (longest, [title]) => Math.max(longest, title.length),
