@@ -4,9 +4,43 @@ const { promises: fs, constants: fsConstants } = require("fs");
 const path = require("path");
 const dateFns = require("date-fns");
 
+// How many sections to break each hour into. Default is 4 for 15
+// minutes (i.e. 60 / 15).
+const GRANULARITY = 4;
+
 function abort(message) {
   console.error(message);
   process.exit(1);
+}
+
+function template(startTime, endTime) {
+  if (startTime < 0 || startTime > 23 || endTime > 23) {
+    throw new RangeError("start and end times must be a valid hour number");
+  }
+
+  if (endTime <= startTime) {
+    throw new RangeError("end time must be greater than start time");
+  }
+
+  const timeSection = "-".repeat(GRANULARITY);
+
+  let templateArray = [
+    ["| Name"], // header / hour titles
+    [`| ${timeSection}`], // header separators
+    [`| ${"-".padEnd(GRANULARITY)}`], // time entries
+  ];
+
+  for (let hour = startTime; hour <= endTime; hour++) {
+    templateArray[0].push(hour.toString().padEnd(GRANULARITY));
+    templateArray[1].push(timeSection);
+    templateArray[2].push(timeSection);
+  }
+
+  // add ending markers to each line
+  templateArray.map((l) => l.push(""));
+
+  // convert to a string
+  return templateArray.map((x) => x.join(" | ")).join("\n");
 }
 
 function configPath(filePath) {
@@ -14,12 +48,11 @@ function configPath(filePath) {
   return path.resolve(configDirectory, filePath);
 }
 
-async function copyTemplate() {
-  const src = configPath("_template.md");
+async function createNewTemplate(startTime, endTime) {
   const dest = configPath(dateToDocumentName(Date.now()));
 
   try {
-    await fs.copyFile(src, dest, fsConstants.COPYFILE_EXCL);
+    await fs.writeFile(dest, template(startTime, endTime), { flag: "wx" });
   } catch (error) {
     abort(error.message);
   }
@@ -71,37 +104,51 @@ function getBreakdown(doc) {
 
 function parseArguments() {
   const defaultArguments = {
+    endTime: 15,
     filename: dateToDocumentName(Date.now()),
-    shouldCopyTemplate: false,
+    shouldCreateNew: false,
     showHelp: false,
     showVersion: false,
+    startTime: 6,
   };
 
-  return process.argv.slice(2).reduce((args, command) => {
+  const parsedArguments = { ...defaultArguments };
+
+  const givenArguments = process.argv.slice(2);
+
+  while (givenArguments.length) {
+    const command = givenArguments.shift();
+
     if (command === "--help" || command == "-h") {
-      args.showHelp = true;
+      parsedArguments.showHelp = true;
     } else if (command === "--version" || command == "-V") {
-      args.showVersion = true;
+      parsedArguments.showVersion = true;
     } else if (command === "new") {
-      args.shouldCopyTemplate = true;
+      parsedArguments.shouldCreateNew = true;
     } else if (command === "today") {
-      args.filename = dateToDocumentName(Date.now());
+      parsedArguments.filename = dateToDocumentName(Date.now());
+    } else if (command === "--start" || command === "-s") {
+      parsedArguments.startTime = parseInt(givenArguments.shift());
+    } else if (command === "--end" || command === "-e") {
+      parsedArguments.endTime = parseInt(givenArguments.shift());
     } else if (isFinite(Number(command))) {
-      args.filename = dateToDocumentName(
+      parsedArguments.filename = dateToDocumentName(
         dateFns.addDays(Date.now(), Number(command))
       );
     } else if (/\.md$/.test(command)) {
-      args.filename = command;
+      parsedArguments.filename = command;
     } else if (isFinite(dateFns.parseISO(command).getTime())) {
-      args.filename = `${command}.md`;
+      parsedArguments.filename = `${command}.md`;
     } else if (new RegExp(command).test("yesterday")) {
-      args.filename = dateToDocumentName(dateFns.subDays(Date.now(), 1));
+      parsedArguments.filename = dateToDocumentName(
+        dateFns.subDays(Date.now(), 1)
+      );
     } else {
       abort(`unknown argument: ${command}`);
     }
+  }
 
-    return args;
-  }, defaultArguments);
+  return parsedArguments;
 }
 
 async function getTimeSummary(filename) {
@@ -168,8 +215,8 @@ async function main() {
     return;
   }
 
-  if (args.shouldCopyTemplate) {
-    return await copyTemplate();
+  if (args.shouldCreateNew) {
+    return await createNewTemplate(args.startTime, args.endTime);
   }
 
   if (args.filename !== null) {
