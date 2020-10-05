@@ -4,9 +4,39 @@ const { promises: fs, constants: fsConstants } = require("fs");
 const path = require("path");
 const dateFns = require("date-fns");
 
+// How many sections to break each hour into. Default is 4 for 15
+// minutes (i.e. 60 / 15).
+const GRANULARITY = 4;
+
 function abort(message) {
   console.error(message);
   process.exit(1);
+}
+
+function template(startTime, endTime) {
+  if (startTime < 0 || startTime > 23 || startTime > 23) {
+    throw new RangeError("start and end times must be a valid hour number");
+  }
+
+  if (endTime <= startTime) {
+    throw new RangeError("end time must be greater than start time");
+  }
+
+  const timeSection = "-".repeat(GRANULARITY);
+
+  let templateArray = [
+    ["Name"], // header / hour titles
+    [timeSection], // header separators
+    ["-".padEnd(GRANULARITY)], // time entries
+  ];
+
+  for (let hour = startTime; hour <= endTime; hour++) {
+    templateArray[0].push(hour.toString().padEnd(GRANULARITY));
+    templateArray[1].push(timeSection);
+    templateArray[2].push(timeSection);
+  }
+
+  return templateArray.map((x) => x.join(" | ")).join("\n");
 }
 
 function configPath(filePath) {
