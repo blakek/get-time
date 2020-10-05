@@ -106,7 +106,14 @@ function parseArguments() {
 
 async function getTimeSummary(filename) {
   const filePath = configPath(filename);
-  const contents = await fs.readFile(filePath, { encoding: "utf8" });
+  let contents;
+
+  try {
+    contents = await fs.readFile(filePath, { encoding: "utf8" });
+  } catch (error) {
+    abort(error.message);
+  }
+
   const hours = getHours(contents);
   const output = [];
 
