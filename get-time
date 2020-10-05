@@ -48,12 +48,11 @@ function configPath(filePath) {
   return path.resolve(configDirectory, filePath);
 }
 
-async function copyTemplate() {
-  const src = configPath("_template.md");
+async function createNewTemplate(startTime, endTime) {
   const dest = configPath(dateToDocumentName(Date.now()));
 
   try {
-    await fs.copyFile(src, dest, fsConstants.COPYFILE_EXCL);
+    await fs.writeFile(dest, template(startTime, endTime), { flag: "wx" });
   } catch (error) {
     abort(error.message);
   }
