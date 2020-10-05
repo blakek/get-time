@@ -14,7 +14,7 @@ function abort(message) {
 }
 
 function template(startTime, endTime) {
-  if (startTime < 0 || startTime > 23 || startTime > 23) {
+  if (startTime < 0 || startTime > 23 || endTime > 23) {
     throw new RangeError("start and end times must be a valid hour number");
   }
 
