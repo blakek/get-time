@@ -25,9 +25,9 @@ function template(startTime, endTime) {
   const timeSection = "-".repeat(GRANULARITY);
 
   let templateArray = [
-    ["Name"], // header / hour titles
-    [timeSection], // header separators
-    ["-".padEnd(GRANULARITY)], // time entries
+    ["| Name"], // header / hour titles
+    [`| ${timeSection}`], // header separators
+    [`| ${"-".padEnd(GRANULARITY)}`], // time entries
   ];
 
   for (let hour = startTime; hour <= endTime; hour++) {
@@ -36,6 +36,10 @@ function template(startTime, endTime) {
     templateArray[2].push(timeSection);
   }
 
+  // add ending markers to each line
+  templateArray.map((l) => l.push(""));
+
+  // convert to a string
   return templateArray.map((x) => x.join(" | ")).join("\n");
 }
 
