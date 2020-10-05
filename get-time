@@ -101,37 +101,51 @@ function getBreakdown(doc) {
 
 function parseArguments() {
   const defaultArguments = {
+    endTime: 15,
     filename: dateToDocumentName(Date.now()),
-    shouldCopyTemplate: false,
+    shouldCreateNew: false,
     showHelp: false,
     showVersion: false,
+    startTime: 6,
   };
 
-  return process.argv.slice(2).reduce((args, command) => {
+  const parsedArguments = { ...defaultArguments };
+
+  const givenArguments = process.argv.slice(2);
+
+  while (givenArguments.length) {
+    const command = givenArguments.shift();
+
     if (command === "--help" || command == "-h") {
-      args.showHelp = true;
+      parsedArguments.showHelp = true;
     } else if (command === "--version" || command == "-V") {
-      args.showVersion = true;
+      parsedArguments.showVersion = true;
     } else if (command === "new") {
-      args.shouldCopyTemplate = true;
+      parsedArguments.shouldCreateNew = true;
     } else if (command === "today") {
-      args.filename = dateToDocumentName(Date.now());
+      parsedArguments.filename = dateToDocumentName(Date.now());
+    } else if (command === "--start" || command === "-s") {
+      parsedArguments.startTime = parseInt(givenArguments.shift());
+    } else if (command === "--end" || command === "-e") {
+      parsedArguments.endTime = parseInt(givenArguments.shift());
     } else if (isFinite(Number(command))) {
-      args.filename = dateToDocumentName(
+      parsedArguments.filename = dateToDocumentName(
         dateFns.addDays(Date.now(), Number(command))
       );
     } else if (/\.md$/.test(command)) {
-      args.filename = command;
+      parsedArguments.filename = command;
     } else if (isFinite(dateFns.parseISO(command).getTime())) {
-      args.filename = `${command}.md`;
+      parsedArguments.filename = `${command}.md`;
     } else if (new RegExp(command).test("yesterday")) {
-      args.filename = dateToDocumentName(dateFns.subDays(Date.now(), 1));
+      parsedArguments.filename = dateToDocumentName(
+        dateFns.subDays(Date.now(), 1)
+      );
     } else {
       abort(`unknown argument: ${command}`);
     }
+  }
 
-    return args;
-  }, defaultArguments);
+  return parsedArguments;
 }
 
 async function getTimeSummary(filename) {
@@ -198,8 +212,8 @@ async function main() {
     return;
   }
 
-  if (args.shouldCopyTemplate) {
-    return await copyTemplate();
+  if (args.shouldCreateNew) {
+    return await createNewTemplate(args.startTime, args.endTime);
   }
 
   if (args.filename !== null) {
