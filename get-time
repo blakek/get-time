@@ -3,6 +3,7 @@
 const { promises: fs, constants: fsConstants } = require("fs");
 const path = require("path");
 const dateFns = require("date-fns");
+const ms = require("ms");
 
 // How many sections to break each hour into. Default is 4 for 15
 // minutes (i.e. 60 / 15).
@@ -151,6 +152,16 @@ function parseArguments() {
   return parsedArguments;
 }
 
+/**
+ * @param {Date} date
+ * @param {number} nearestMs
+ * @param {(x: number) => number} roundFn
+ * @return {Date}
+ */
+function roundDate(date, nearestMs, roundFn = Math.ceil) {
+  return new Date(roundFn(date.getTime() / nearestMs) * nearestMs);
+}
+
 async function getTimeSummary(filename) {
   const filePath = configPath(filename);
   let contents;
@@ -172,7 +183,10 @@ async function getTimeSummary(filename) {
       Date.now(),
       remainingHours * 60 // HACK: dateFns.addHours seems to only apply whole hours, not minutes
     );
-    const endTime = new Date(endTimestamp).toLocaleTimeString();
+    const endTime = roundDate(
+      new Date(endTimestamp),
+      ms("15min")
+    ).toLocaleTimeString();
 
     output.push(`Remaining:   ${remainingHours} hr - ${endTime}`);
   }
