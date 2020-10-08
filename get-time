@@ -110,7 +110,7 @@ function parseArguments() {
     shouldCreateNew: false,
     showHelp: false,
     showVersion: false,
-    startTime: 6,
+    startTime: 7,
   };
 
   const parsedArguments = { ...defaultArguments };
