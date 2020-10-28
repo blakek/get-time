@@ -49,11 +49,13 @@ function configPath(filePath) {
   return path.resolve(configDirectory, filePath);
 }
 
-async function createNewTemplate(startTime, endTime) {
-  const dest = configPath(dateToDocumentName(Date.now()));
+async function createNewTemplate(args) {
+  const dest = configPath(args.filename);
 
   try {
-    await fs.writeFile(dest, template(startTime, endTime), { flag: "wx" });
+    await fs.writeFile(dest, template(args.startTime, args.endTime), {
+      flag: "wx",
+    });
   } catch (error) {
     abort(error.message);
   }
@@ -230,7 +232,7 @@ async function main() {
   }
 
   if (args.shouldCreateNew) {
-    return await createNewTemplate(args.startTime, args.endTime);
+    return await createNewTemplate(args);
   }
 
   if (args.filename !== null) {
