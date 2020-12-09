@@ -1,16 +1,16 @@
 {
-	"name": "times-txt",
-	"version": "0.1.0",
-	"main": "get-time",
-	"author": "GS&F Devs <mindreactor@gsandf.com> (https://gsandf.com/)",
-	"license": "MIT",
-	"dependencies": {
-		"@types/node": "^14.0.5",
-		"date-fns": "^2.14.0",
-		"ms": "^2.1.2"
-	},
-	"devDependencies": {
-		"ts-node": "^8.10.2",
-		"typescript": "^3.9.7"
-	}
+  "name": "times-txt",
+  "version": "0.2.0",
+  "main": "get-time",
+  "author": "GS&F Devs <mindreactor@gsandf.com> (https://gsandf.com/)",
+  "license": "MIT",
+  "dependencies": {
+    "@types/node": "^14.0.5",
+    "date-fns": "^2.14.0",
+    "ms": "^2.1.2"
+  },
+  "devDependencies": {
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.7"
+  }
 }
