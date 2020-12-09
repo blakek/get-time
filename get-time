@@ -41,7 +41,8 @@ function template(startTime, endTime) {
   templateArray.map((l) => l.push(""));
 
   // convert to a string
-  return templateArray.map((x) => x.join(" | ")).join("\n");
+  const createRow = (data) => data.join(" | ").trim();
+  return templateArray.map(createRow).join("\n") + "\n";
 }
 
 function configPath(filePath) {
