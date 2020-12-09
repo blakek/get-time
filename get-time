@@ -123,14 +123,12 @@ function parseArguments() {
   while (givenArguments.length) {
     const command = givenArguments.shift();
 
-    if (command === "--help" || command == "-h") {
+    if (command === "--help" || command === "-h" || command === "help") {
       parsedArguments.showHelp = true;
-    } else if (command === "--version" || command == "-V") {
+    } else if (command === "--version" || command === "-V") {
       parsedArguments.showVersion = true;
     } else if (command === "new") {
       parsedArguments.shouldCreateNew = true;
-    } else if (command === "today") {
-      parsedArguments.filename = dateToDocumentName(Date.now());
     } else if (command === "--start" || command === "-s") {
       parsedArguments.startTime = parseInt(givenArguments.shift());
     } else if (command === "--end" || command === "-e") {
@@ -143,10 +141,6 @@ function parseArguments() {
       parsedArguments.filename = command;
     } else if (isFinite(dateFns.parseISO(command).getTime())) {
       parsedArguments.filename = `${command}.md`;
-    } else if (new RegExp(command).test("yesterday")) {
-      parsedArguments.filename = dateToDocumentName(
-        dateFns.subDays(Date.now(), 1)
-      );
     } else {
       abort(`unknown argument: ${command}`);
     }
@@ -208,13 +202,31 @@ Usage:
   get-time [options] [command]
 
 Options:
+  -e, --end      sets the ending time when creating a new timesheet
   -h, --help     output usage information and exit
+  -s, --start    sets the beginning time when creating a new timesheet
   -V, --version  output the version number and exit
 
 Commands:
-  new       creates a new timesheet for the current day; no options
-  today     shows time for today
-  [number]  shows time for the day {n} days from now (positive or negative)`.trim()
+  new         creates a new timesheet
+  [number]    shows time or creates a timesheet given days from now. This can
+              be positive or negative. (default: 0)
+  [filename]  shows time in the timesheet at the given path
+  [ISO date]  shows time in the timesheet with a matching date
+
+Examples:
+  Create a timesheet for today:
+	get-time new
+
+  Show time entered for today:
+	get-time
+
+  Create a timesheet for tomorrow, starting at 6am and ending at 2:59pm:
+    get-time new +1 --start 6 --end 14
+
+  Get time entered for yesterday:
+    get-time -1
+	`.trim()
   );
 }
 
